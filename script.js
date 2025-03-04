@@ -30,34 +30,16 @@ class SpanglishFixitGame {
             this.startTimer();
         };
 
-        this.restartGame = () => {
-            this.gameActive = false;
-            this.reviewMode = false;
-            clearInterval(this.interval);
-            this.currentIndex = 0;
-            this.score = 0;
-            this.timer = 120;
-            this.wrongAnswers = [];
-            this.sentences = this.shuffle([...this.originalSentences]);
-            document.getElementById("score").textContent = this.score;
-            document.getElementById("feedback").textContent = "";
-            document.getElementById("sentence").textContent = "";
-            document.getElementById("answer").value = "";
-            document.getElementById("timer").textContent = "Time left: 120s";
-            document.getElementById("timer-bar").style.width = "100%";
-            document.getElementById("review").style.display = "none";
-            document.getElementById("restart").style.display = "none";
-            document.getElementById("start").style.display = "block";
-        };
+        // Remove the duplicate restartGame arrow function here!
 
         this.startReview = () => {
-    if (this.wrongAnswers.length === 0) return;
-    this.reviewMode = true;
-    this.currentIndex = 0;
-    // Hide the Review button when entering review mode:
-    document.getElementById("review").style.display = "none";
-    this.updateSentence();
-};
+            if (this.wrongAnswers.length === 0) return;
+            this.reviewMode = true;
+            this.currentIndex = 0;
+            // Hide the Review button when entering review mode:
+            document.getElementById("review").style.display = "none";
+            this.updateSentence();
+        };
 
         this.setupInputListener = () => {
             document.getElementById("answer").addEventListener("keyup", (event) => {
@@ -67,12 +49,12 @@ class SpanglishFixitGame {
             });
         };
 
-        // Now bind the methods
+        // Now bind the methods that are defined as arrow functions
         this.startGame = this.startGame.bind(this);
-        this.restartGame = this.restartGame.bind(this);
         this.startReview = this.startReview.bind(this);
         this.setupInputListener = this.setupInputListener.bind(this);
 
+        // Note: We will use the prototype method for restartGame(), so don't bind an arrow function version.
         this.initUI();
     }
 
@@ -83,10 +65,8 @@ class SpanglishFixitGame {
 
     initUI() {
         console.log("Game script is running!");
-
         // Set the page title
         document.title = "Spanglish Fixit Challenge";
-
         document.body.innerHTML = `
     <style>
     /* General body styles */
@@ -102,7 +82,6 @@ class SpanglishFixitGame {
         height: 100vh;
         margin: 0;
     }
-
     /* Instructions overlay */
     #instructions-overlay {
         position: fixed;
@@ -127,7 +106,6 @@ class SpanglishFixitGame {
     #instructions-box h2 {
         margin-top: 0;
     }
-
     /* Close instructions button */
     #close-instructions {
         margin-top: 15px;
@@ -142,7 +120,6 @@ class SpanglishFixitGame {
     #close-instructions:hover {
         opacity: 0.8;
     }
-
     /* Game container */
     #game-container {
         background: rgba(0, 0, 0, 0.8);
@@ -151,12 +128,10 @@ class SpanglishFixitGame {
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         text-align: center;
     }
-
     /* Paragraph style */
     p {
         font-size: 18px;
     }
-
     /* Input styles */
     input {
         padding: 10px;
@@ -174,7 +149,6 @@ class SpanglishFixitGame {
         border: 2px solid #FF0000;
         background-color: rgba(255, 0, 0, 0.2);
     }
-
     /* Button styles for Start, Restart, Review */
     button {
         padding: 10px 20px;
@@ -202,7 +176,6 @@ class SpanglishFixitGame {
         color: black;
         display: none;
     }
-
     /* Timer bar */
     #timer-bar {
         width: 100%;
@@ -211,7 +184,6 @@ class SpanglishFixitGame {
         transition: width 1s linear;
     }
 </style>
-
     <!-- Instructions Overlay -->
     <div id="instructions-overlay">
         <div id="instructions-box">
@@ -246,12 +218,9 @@ class SpanglishFixitGame {
         <button id="review">Review Mistakes</button>
     </div>
 `;
-
         document.getElementById("close-instructions").addEventListener("click", () => {
-    document.getElementById("instructions-overlay").style.display = "none";
-});
-
-
+            document.getElementById("instructions-overlay").style.display = "none";
+        });
         // Using arrow functions to preserve the class context
         document.getElementById("start").addEventListener("click", () => this.startGame());
         document.getElementById("restart").addEventListener("click", () => this.restartGame());
@@ -260,179 +229,218 @@ class SpanglishFixitGame {
     }
 
     updateSentence() {
-    const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
-    if (this.currentIndex < currentSet.length) {
-        const currentSentence = currentSet[this.currentIndex];
-        const sentenceParts = currentSentence.sentence.split(" ");
-        let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
-        document.getElementById("sentence").innerHTML = sentenceHTML;
+        const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
+        if (this.currentIndex < currentSet.length) {
+            const currentSentence = currentSet[this.currentIndex];
+            const sentenceParts = currentSentence.sentence.split(" ");
+            let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
+            document.getElementById("sentence").innerHTML = sentenceHTML;
+            // Initialize the click timer for scoring
+            this.startClickTime = Date.now();
+            // Clear any existing points interval (if any)
+            if (this.pointsInterval) clearInterval(this.pointsInterval);
+            // Start updating the points bar for the click phase
+            this.pointsInterval = setInterval(() => {
+                let elapsed = Date.now() - this.startClickTime;
+                let availablePoints = Math.max(100 - Math.floor(elapsed / 100), 10);
+                let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
+                document.getElementById("points-bar").style.width = percentage + "%";
+            }, 100);
+            // Attach event listeners for each word
+            const clickableWords = document.querySelectorAll(".clickable-word");
+            clickableWords.forEach((wordElement) => {
+                wordElement.addEventListener("click", () => {
+                    this.handleWordClick(wordElement, currentSentence);
+                });
+            });
+        } else {
+            this.endGame();
+        }
+    }
 
-        // Initialize the click timer for scoring
-        this.startClickTime = Date.now();
+    handleWordClick(wordElement, currentSentence) {
+        // Clear the points progress bar update interval for click phase
+        if (this.pointsInterval) {
+            clearInterval(this.pointsInterval);
+            this.pointsInterval = null;
+        }
+        const clickedWord = wordElement.textContent;
+        // Remove all non-word characters (except whitespace), trim, and convert to lowercase
+        const cleanedClickedWord = clickedWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
+        const cleanedErrorWord = currentSentence.errorWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
+        const clickTime = Date.now() - this.startClickTime;
+        // If in review mode, do not update the score.
+        if (this.reviewMode) {
+            if (cleanedClickedWord === cleanedErrorWord) {
+                wordElement.style.color = 'green';
+            } else {
+                wordElement.style.color = 'red';
+            }
+            // Highlight the correct word in green
+            const correctWordElements = document.querySelectorAll('.clickable-word');
+            correctWordElements.forEach((element) => {
+                if (element.textContent.replace(/[^\w\s]|_/g, "").trim().toLowerCase() === cleanedErrorWord) {
+                    element.style.color = 'green';
+                }
+            });
+            // Remove event listeners (so the player can't click again)
+            const clickableWords = document.querySelectorAll(".clickable-word");
+            clickableWords.forEach((element) => {
+                element.removeEventListener("click", () => {
+                    this.handleWordClick(element, currentSentence);
+                });
+            });
+            // Move to the correction phase without updating score.
+            this.selectErrorWord(clickedWord);
+            return;
+        }
+        // Normal game mode: process clicks and update score.
+        if (cleanedClickedWord === cleanedErrorWord) {
+            // Correct click: calculate and add positive score
+            let clickScore = Math.max(100 - Math.floor(clickTime / 100), 10); // Max 100, min 10
+            this.score = (this.score || 0) + clickScore;
+            wordElement.style.color = 'green';  // Correct word (green)
+        } else {
+            // Incorrect click: subtract penalty points
+            this.score = (this.score || 0) - 50;
+            wordElement.style.color = 'red';  // Incorrect word (red)
+            // Save the mistake if not already saved
+            if (!this.wrongAnswers.includes(currentSentence)) {
+                this.wrongAnswers.push(currentSentence);
+            }
+        }
+        document.getElementById("score").textContent = this.score; // Update the score display
+        // Highlight the correct word in green by cleaning its text as well
+        const correctWordElements = document.querySelectorAll('.clickable-word');
+        correctWordElements.forEach((element) => {
+            if (element.textContent.replace(/[^\w\s]|_/g, "").trim().toLowerCase() === cleanedErrorWord) {
+                element.style.color = 'green';
+            }
+        });
+        // Disable further clicks by removing event listeners
+        const clickableWords = document.querySelectorAll(".clickable-word");
+        clickableWords.forEach((element) => {
+            element.removeEventListener("click", () => {
+                this.handleWordClick(element, currentSentence);
+            });
+        });
+        // Move to the correction phase
+        this.selectErrorWord(clickedWord);
+    }
 
-        // Clear any existing points interval (if any)
-        if (this.pointsInterval) clearInterval(this.pointsInterval);
-
-        // Start updating the points bar for the click phase
+    selectErrorWord(word) {
+        this.currentErrorWord = word;
+        document.getElementById("feedback").textContent = `You selected "${word}". Now, type the correction.`;
+        // Clear any previous points interval (just in case)
+        if (this.pointsInterval) {
+            clearInterval(this.pointsInterval);
+            this.pointsInterval = null;
+        }
+        // Start the correction timer and update the points bar for correction phase
+        this.startCorrectionTime = Date.now();
+        document.getElementById("points-bar").style.width = "100%";
         this.pointsInterval = setInterval(() => {
-            let elapsed = Date.now() - this.startClickTime;
+            let elapsed = Date.now() - this.startCorrectionTime;
             let availablePoints = Math.max(100 - Math.floor(elapsed / 100), 10);
             let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
             document.getElementById("points-bar").style.width = percentage + "%";
         }, 100);
-
-        // Attach event listeners for each word
-        const clickableWords = document.querySelectorAll(".clickable-word");
-        clickableWords.forEach((wordElement) => {
-            wordElement.addEventListener("click", () => {
-                this.handleWordClick(wordElement, currentSentence);
-            });
-        });
-    } else {
-        this.endGame();
+        document.getElementById("answer").focus();
     }
-}
-
-
-    handleWordClick(wordElement, currentSentence) {
-    // Clear the points progress bar update interval for click phase
-    if (this.pointsInterval) {
-        clearInterval(this.pointsInterval);
-        this.pointsInterval = null;
-    }
-    
-    const clickedWord = wordElement.textContent;
-    // Remove all non-word characters (except whitespace), trim, and convert to lowercase
-    const cleanedClickedWord = clickedWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
-    const cleanedErrorWord = currentSentence.errorWord.replace(/[^\w\s]|_/g, "").trim().toLowerCase();
-    
-    const clickTime = Date.now() - this.startClickTime;
-    
-    if (cleanedClickedWord === cleanedErrorWord) {
-        // Correct click: calculate and add positive score
-        let clickScore = Math.max(100 - Math.floor(clickTime / 100), 10); // Max 100, min 10
-        this.score = (this.score || 0) + clickScore;
-        wordElement.style.color = 'green';  // Correct word (green)
-    } else {
-        // Incorrect click: subtract penalty points
-        this.score = (this.score || 0) - 50;
-        wordElement.style.color = 'red';  // Incorrect word (red)
-        // Save the mistake if not already saved
-    if (!this.wrongAnswers.includes(currentSentence)) {
-        this.wrongAnswers.push(currentSentence);
-    }
-    }
-
-    document.getElementById("score").textContent = this.score; // Update the score display
-
-    // Highlight the correct word in green by cleaning its text as well
-    const correctWordElements = document.querySelectorAll('.clickable-word');
-    correctWordElements.forEach((element) => {
-        if (element.textContent.replace(/[^\w\s]|_/g, "").trim().toLowerCase() === cleanedErrorWord) {
-            element.style.color = 'green';
-        }
-    });
-
-    // Disable further clicks by removing event listeners
-    const clickableWords = document.querySelectorAll(".clickable-word");
-    clickableWords.forEach((element) => {
-        element.removeEventListener("click", () => {
-            this.handleWordClick(element, currentSentence);
-        });
-    });
-
-    // Move to the correction phase
-    this.selectErrorWord(clickedWord);
-}
-
-
-
-
-    selectErrorWord(word) {
-    this.currentErrorWord = word;
-    document.getElementById("feedback").textContent = `You selected "${word}". Now, type the correction.`;
-    
-    // Clear any previous points interval (just in case)
-    if (this.pointsInterval) {
-        clearInterval(this.pointsInterval);
-        this.pointsInterval = null;
-    }
-    
-    // Start the correction timer and update the points bar for correction phase
-    this.startCorrectionTime = Date.now();
-    document.getElementById("points-bar").style.width = "100%";
-    
-    this.pointsInterval = setInterval(() => {
-        let elapsed = Date.now() - this.startCorrectionTime;
-        let availablePoints = Math.max(100 - Math.floor(elapsed / 100), 10);
-        let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
-        document.getElementById("points-bar").style.width = percentage + "%";
-    }, 100);
-    
-    document.getElementById("answer").focus();
-}
-
-
 
     checkAnswer() {
-    // Clear the points progress bar update interval for correction phase
-    if (this.pointsInterval) {
-        clearInterval(this.pointsInterval);
-        this.pointsInterval = null;
+        // Prevent submission if no error word was selected
+        if (!this.currentErrorWord) {
+            document.getElementById("feedback").textContent = "Please click on the incorrect word first!";
+            return;
+        }
+        // Clear the points progress bar update interval for correction phase
+        if (this.pointsInterval) {
+            clearInterval(this.pointsInterval);
+            this.pointsInterval = null;
+        }
+        // Stop if the game isn't active
+        if (!this.gameActive && !this.reviewMode) return;
+        const input = document.getElementById("answer");
+        const userInput = input.value.trim().toLowerCase();
+        const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
+        const currentSentence = currentSet[this.currentIndex];
+        const correctionTime = Date.now() - this.startCorrectionTime; // Time taken for correction
+        // Handle multiple or single correct answers
+        let possibleAnswers = currentSentence.correctAnswer;
+        if (!Array.isArray(possibleAnswers)) {
+            possibleAnswers = [possibleAnswers];
+        }
+        // Convert all possible answers to lowercase for comparison
+        possibleAnswers = possibleAnswers.map(answer => answer.toLowerCase());
+        // If we are in review mode, don't modify the score.
+        if (this.reviewMode) {
+            if (possibleAnswers.includes(userInput)) {
+                input.classList.add("correct");
+                document.getElementById("feedback").textContent = 
+                    `Correct. The answer is: ${possibleAnswers.join(" / ")}`;
+                setTimeout(() => {
+                    input.classList.remove("correct");
+                    input.value = ""; // Clear input after delay
+                    this.currentIndex++;
+                    this.currentErrorWord = null; // Reset so next sentence requires a click
+                    this.updateSentence();
+                }, 1000);
+            } else {
+                input.classList.add("incorrect");
+                document.getElementById("feedback").textContent = 
+                    `Incorrect. The correct answer is: ${possibleAnswers.join(" / ")}`;
+                setTimeout(() => {
+                    input.classList.remove("incorrect");
+                    input.value = ""; // Clear input after delay
+                    this.currentIndex++;
+                    this.currentErrorWord = null;
+                    this.updateSentence();
+                }, 1000);
+            }
+            return;
+        }
+        // Normal game mode: process answer and update score.
+        if (possibleAnswers.includes(userInput)) {
+            // === Correct ===
+            let correctionScore = Math.max(100 - Math.floor(correctionTime / 100), 10); // Max 100, min 10
+            this.score = (this.score || 0) + correctionScore;
+            document.getElementById("score").textContent = this.score;
+            input.classList.add("correct");
+            document.getElementById("feedback").textContent = 
+                `Correct. The answer is: ${possibleAnswers.join(" / ")}`;
+            setTimeout(() => {
+                input.classList.remove("correct");
+                input.value = ""; // Clear input after delay
+                this.currentIndex++;
+                this.currentErrorWord = null;
+                this.updateSentence();
+            }, 1000);
+        } else {
+            // === Incorrect ===
+            this.score = (this.score || 0) - 50;
+            // Save the mistake along with the student's answer (if not already saved)
+            if (!this.wrongAnswers.some(item => item.sentence === currentSentence.sentence)) {
+                this.wrongAnswers.push({
+                    sentence: currentSentence.sentence,
+                    errorWord: currentSentence.errorWord,
+                    correctAnswer: currentSentence.correctAnswer,
+                    studentAnswer: userInput
+                });
+            }
+            document.getElementById("score").textContent = this.score;
+            input.classList.add("incorrect");
+            document.getElementById("feedback").textContent = 
+                `Incorrect. The correct answer is: ${possibleAnswers.join(" / ")}`;
+            setTimeout(() => {
+                input.classList.remove("incorrect");
+                input.value = ""; // Clear input after delay
+                this.currentIndex++;
+                this.currentErrorWord = null;
+                this.updateSentence();
+            }, 1000);
+        }
     }
-
-    // Stop if the game isn't active
-    if (!this.gameActive && !this.reviewMode) return;
-
-    const input = document.getElementById("answer");
-    const userInput = input.value.trim().toLowerCase();
-    const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
-    const currentSentence = currentSet[this.currentIndex];
-    const correctionTime = Date.now() - this.startCorrectionTime; // Time taken for correction
-
-    // Handle multiple or single correct answers
-    let possibleAnswers = currentSentence.correctAnswer;
-    if (!Array.isArray(possibleAnswers)) {
-        possibleAnswers = [possibleAnswers]; 
-    }
-    // Convert all possible answers to lowercase for comparison
-    possibleAnswers = possibleAnswers.map(answer => answer.toLowerCase());
-
-    // Check if user's input matches any valid answer
-    if (possibleAnswers.includes(userInput)) {
-        // === Correct ===
-        let correctionScore = Math.max(100 - Math.floor(correctionTime / 100), 10); // Max 100, min 10
-        this.score = (this.score || 0) + correctionScore;
-        document.getElementById("score").textContent = this.score;
-        input.classList.add("correct");
-        document.getElementById("feedback").textContent = 
-            `Correct. The answer is: ${possibleAnswers.join(" / ")}`;
-        setTimeout(() => {
-            input.classList.remove("correct");
-            input.value = ""; // Clear input after delay
-            this.currentIndex++;
-            this.updateSentence();
-        }, 1000);
-    } else {
-        // === Incorrect ===
-        this.score = (this.score || 0) - 50;
-        // Save the mistake if not already saved
-    if (!this.wrongAnswers.includes(currentSentence)) {
-        this.wrongAnswers.push(currentSentence);
-    }
-        document.getElementById("score").textContent = this.score;
-        input.classList.add("incorrect");
-        document.getElementById("feedback").textContent = 
-            `Incorrect. The correct answer is: ${possibleAnswers.join(" / ")}`;
-        setTimeout(() => {
-            input.classList.remove("incorrect");
-            input.value = ""; // Clear input after delay
-            this.currentIndex++;
-            this.updateSentence();
-        }, 1000);
-    }
-}
-
 
     startTimer() {
         this.interval = setInterval(() => {
@@ -448,18 +456,28 @@ class SpanglishFixitGame {
     }
 
     endGame() {
-    this.gameActive = false;
-    clearInterval(this.interval);
-    // Show a final message with the final score
-    document.getElementById("feedback").textContent = `Game Over! Final Score: ${this.score}`;
-    // Show the Restart button
-    document.getElementById("restart").style.display = "block";
-    // If there are any mistakes, show the Review button
-    if (this.wrongAnswers.length > 0) {
-        document.getElementById("review").style.display = "block";
+        this.gameActive = false;
+        clearInterval(this.interval);
+        // Show a final message with the final score
+        document.getElementById("feedback").textContent = `Game Over! Final Score: ${this.score}`;
+        // Show the Restart button
+        document.getElementById("restart").style.display = "block";
+        // If there are any mistakes, show the Review button and the Download Report button
+        if (this.wrongAnswers.length > 0) {
+            document.getElementById("review").style.display = "block";
+            // Create and display the Download Report button if it doesn't exist
+            let downloadBtn = document.getElementById("downloadReport");
+            if (!downloadBtn) {
+                downloadBtn = document.createElement("button");
+                downloadBtn.id = "downloadReport";
+                downloadBtn.textContent = "Download Report";
+                document.getElementById("game-container").appendChild(downloadBtn);
+                downloadBtn.addEventListener("click", () => this.downloadReport());
+            } else {
+                downloadBtn.style.display = "block";
+            }
+        }
     }
-}
-
 
     restartGame() {
         this.gameActive = false;
@@ -479,6 +497,22 @@ class SpanglishFixitGame {
         document.getElementById("review").style.display = "none";
         document.getElementById("restart").style.display = "none";
         document.getElementById("start").style.display = "block";
+    }
+
+    downloadReport() {
+        let report = "Mistakes Report\n\n";
+        this.wrongAnswers.forEach((item, index) => {
+            // If correctAnswer is an array, join the options; otherwise, use it directly.
+            let correct = Array.isArray(item.correctAnswer) ? item.correctAnswer.join(" / ") : item.correctAnswer;
+            report += `Mistake ${index + 1}:\nSentence: ${item.sentence}\nError Word: ${item.errorWord}\nYour Answer: ${item.studentAnswer}\nCorrect Answer: ${correct}\n\n`;
+        });
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "report.txt";
+        a.click();
+        URL.revokeObjectURL(url);
     }
 }
 
@@ -500,195 +534,239 @@ const sentences = [
         correctAnswer: "few"
     },
     { 
-    sentence: "I couldn’t assist the meeting.", 
-    errorWord: "assist",
-    correctAnswer: "attend"
-  },
-  { 
-    sentence: "Today’s class was very bored.", 
-    errorWord: "bored",
-    correctAnswer: "boring"
-  },
-  { 
-    sentence: "Actually, I’m working in a travel agent’s.", 
-    errorWord: "actually",
-    correctAnswer: "currently"
-  },
-  { 
-    sentence: "Don’t shout at him. He’s very sensible.", 
-    errorWord: "sensible",
-    correctAnswer: "sensitive"
-  },
-  { 
-    sentence: "She presented me to her friend Bea.", 
-    errorWord: "presented",
-    correctAnswer: "introduced"
-  },
-  { 
-    sentence: "I don’t have no money.", 
-    errorWord: "no",
-    correctAnswer: "any"
-  },
-  { 
-    sentence: "She gave me some good advices.", 
-    errorWord: "advices",
-    correctAnswer: "advice"
-  },
-  { 
-    sentence: "I did a big effort.", 
-    errorWord: "did",
-    correctAnswer: "made"
-  },
-  { 
-    sentence: "It’s an important amount of material.", 
-    errorWord: "important",
-    // Multiple possible corrections stored as an array
-    correctAnswer: ["significant", "considerable"]
+        sentence: "I couldn’t assist the meeting.", 
+        errorWord: "assist",
+        correctAnswer: "attend"
+    },
+    { 
+        sentence: "Today’s class was very bored.", 
+        errorWord: "bored",
+        correctAnswer: "boring"
+    },
+    { 
+        sentence: "Actually, I’m working in a travel agent’s.", 
+        errorWord: "actually",
+        correctAnswer: "currently"
+    },
+    { 
+        sentence: "Don’t shout at him. He’s very sensible.", 
+        errorWord: "sensible",
+        correctAnswer: "sensitive"
+    },
+    { 
+        sentence: "She presented me to her friend Bea.", 
+        errorWord: "presented",
+        correctAnswer: "introduced"
+    },
+    { 
+        sentence: "I don’t have no money.", 
+        errorWord: "no",
+        correctAnswer: "any"
+    },
+    { 
+        sentence: "She gave me some good advices.", 
+        errorWord: "advices",
+        correctAnswer: "advice"
+    },
+    { 
+        sentence: "I did a big effort.", 
+        errorWord: "did",
+        correctAnswer: "made"
+    },
+    { 
+        sentence: "It’s an important amount of material.", 
+        errorWord: "important",
+        correctAnswer: ["significant", "considerable"]
+    },
+    {
+        sentence: "I’m thinking in buying a new car.",
+        errorWord: "in",
+        correctAnswer: ["about", "of"]
+    },
+    {
+        sentence: "The exam consists in 5 different papers.",
+        errorWord: "in",
+        correctAnswer: "of"
+    },
+    {
+        sentence: "It was a real deception when I failed the exam.",
+        errorWord: "deception",
+        correctAnswer: "disappointment"
+    },
+    {
+        sentence: "My favourite travel was when I went to Thailand.",
+        errorWord: "travel",
+        correctAnswer: "trip"
+    },
+    {
+        sentence: "He’s absolutely compromised to the company’s goals.",
+        errorWord: "compromised",
+        correctAnswer: "committed"
+    },
+    {
+        sentence: "This is your final advice! Don’t be late again.",
+        errorWord: "advice",
+        correctAnswer: "warning"
+    },
+    {
+        sentence: "If you approve this final test, you’ll get the job.",
+        errorWord: "approve",
+        correctAnswer: "pass"
+    },
+    {
+        sentence: "Could you give me the direction for the new offices?",
+        errorWord: "direction",
+        correctAnswer: "address"
+    },
+    {
+        sentence: "They got very bad notes in their exams.",
+        errorWord: "notes",
+        correctAnswer: ["marks", "grades"]
+    },
+    {
+        sentence: "You shouldn’t talk to the bus conductor while she’s driving.",
+        errorWord: "conductor",
+        correctAnswer: "driver"
+    },
+    {
+        sentence: "We stayed in a camping, but it was dirty and overcrowded.",
+        errorWord: "camping",
+        correctAnswer: ["campsite", "camp site"]
+    },
+    {
+        sentence: "Is there a public parking near here?",
+        errorWord: "parking",
+        correctAnswer: ["car park", "parking lot"]
+    },
+    {
+        sentence: "Were you expecting to see him there or was it just a casualty?",
+        errorWord: "casualty",
+        correctAnswer: "coincidence"
+    },
+    {
+        sentence: "I really can’t support people like that!",
+        errorWord: "support",
+        correctAnswer: "stand"
+    },
+    {
+        sentence: "I don’t eat jam because I’m a vegetarian.",
+        errorWord: "jam",
+        correctAnswer: "ham"
+    },
+    {
+        sentence: "I always take a coffee before going to work.",
+        errorWord: "take",
+        correctAnswer: ["have", "drink"]
+    },
+    {
+        sentence: "That was a very long history.",
+        errorWord: "history",
+        correctAnswer: "story"
+    },
+    {
+        sentence: "It was a very tired journey.",
+        errorWord: "tired",
+        correctAnswer: "tiring"
+    },
+    {
+        sentence: "I have afraid of spiders.",
+        errorWord: "have",
+        correctAnswer: "am"
+    },
+    {
+        sentence: "I had lucky to get the job.",
+        errorWord: "had",
+        correctAnswer: "was"
+    },
+    {
+        sentence: "People is always telling me that.",
+        errorWord: "is",
+        correctAnswer: "are"
+    },
+    {
+        sentence: "I organized a big party but anybody came.",
+        errorWord: "anybody",
+        correctAnswer: ["nobody", "no one"]
+    },
+    {
+        sentence: "I have a carpet here with all the relevant documents.",
+        errorWord: "carpet",
+        correctAnswer: "folder"
+    },
+    {
+        sentence: "She’s responsible of training new employees.",
+        errorWord: "of",
+        correctAnswer: "for"
+    },
+    {
+        sentence: "At the moment, I’m unemployment, but I’m looking for a job.",
+        errorWord: "unemployment",
+        correctAnswer: "unemployed"
+    },
+    {
+        sentence: "My wife and I often discuss about stupid things.",
+        errorWord: "discuss",
+        correctAnswer: "argue"
+    },
+    {
+        sentence: "You can’t avoid me from seeing my friends.",
+        errorWord: "avoid",
+        correctAnswer: ["prevent", "stop"]
+    },
+    {
+        sentence: "I wish it doesn’t rain during your holiday!",
+        errorWord: "wish",
+        correctAnswer: "hope"
+    },
+    {
+        sentence: "Atleti won Real Madrid last night.",
+        errorWord: "won",
+        correctAnswer: "beat"
+    },
+    {
+    sentence: "I’ll have a shower before go out.",
+    errorWord: "go",
+    correctAnswer: "going"
   },
   {
-    sentence: "I’m thinking in buying a new car.",
+    sentence: "Sarah doesn’t think he’s coming today but I think yes.",
+    errorWord: "yes",
+    correctAnswer: "so"
+  },
+  {
+    sentence: "For a long and healthy life, it’s important to practise sport regularly.",
+    errorWord: "practise",
+    correctAnswer: "do"
+  },
+  {
+    sentence: "The factory needs to contract more staff over the summer.",
+    errorWord: "contract",
+    correctAnswer: ["hire", "employ", "take on"]
+  },
+  {
+    sentence: "I’ve never been in London, but I would really like to go.",
     errorWord: "in",
-    correctAnswer: ["about", "of"]
+    correctAnswer: "to"
   },
   {
-    sentence: "The exam consists in 5 different papers.",
-    errorWord: "in",
-    correctAnswer: "of"
+    sentence: "Don’t put attention to anything they say.",
+    errorWord: "put",
+    correctAnswer: "pay"
   },
   {
-    sentence: "It was a real deception when I failed the exam.",
-    errorWord: "deception",
-    correctAnswer: "disappointment"
+    sentence: "He’s talking with the phone right now.",
+    errorWord: "with",
+    correctAnswer: "on"
   },
   {
-    sentence: "My favourite travel was when I went to Thailand.",
-    errorWord: "travel",
-    correctAnswer: "trip"
+    sentence: "The flight was cancelled for the weather.",
+    errorWord: "for",
+    correctAnswer: ["because of", "due to"]
   },
   {
-    sentence: "He’s absolutely compromised to the company’s goals.",
-    errorWord: "compromised",
-    correctAnswer: "committed"
-  },
-  {
-    sentence: "This is your final advice! Don’t be late again.",
-    errorWord: "advice",
-    correctAnswer: "warning"
-  },
-  {
-    sentence: "If you approve this final test, you’ll get the job.",
-    errorWord: "approve",
-    correctAnswer: "pass"
-  },
-  {
-    sentence: "Could you give me the direction for the new offices?",
-    errorWord: "direction",
-    correctAnswer: "address"
-  },
-  {
-    sentence: "They got very bad notes in their exams.",
-    errorWord: "notes",
-    correctAnswer: ["marks", "grades"]
-  },
-  {
-    sentence: "You shouldn’t talk to the bus conductor while she’s driving.",
-    errorWord: "conductor",
-    correctAnswer: "driver"
-  },
-  {
-    sentence: "We stayed in a camping, but it was dirty and overcrowded.",
-    errorWord: "camping",
-    correctAnswer: ["campsite", "camp site"]
-  },
-  {
-    sentence: "Is there a public parking near here?",
-    errorWord: "parking",
-    correctAnswer: ["car park", "parking lot"]
-  },
-  {
-    sentence: "Were you expecting to see him there or was it just a casualty?",
-    errorWord: "casualty",
-    correctAnswer: "coincidence"
-  },
-  {
-    sentence: "I really can’t support people like that!",
-    errorWord: "support",
-    correctAnswer: "stand"
-  },
-  {
-    sentence: "I don’t eat jam because I’m a vegetarian.",
-    errorWord: "jam",
-    correctAnswer: "ham"
-  },
-  {
-    sentence: "I always take a coffee before going to work.",
-    errorWord: "take",
-    correctAnswer: ["have", "drink"]
-  },
-  {
-    sentence: "That was a very long history.",
-    errorWord: "history",
-    correctAnswer: "story"
-  },
-  {
-    sentence: "It was a very tired journey.",
-    errorWord: "tired",
-    correctAnswer: "tiring"
-  },
-  {
-    sentence: "I have afraid of spiders.",
-    errorWord: "have",
-    correctAnswer: "am"
-  },
-  {
-    sentence: "I had lucky to get the job.",
-    errorWord: "had",
-    correctAnswer: "was"
-  },
-  {
-    sentence: "People is always telling me that.",
-    errorWord: "is",
-    correctAnswer: "are"
-  },
-  {
-    sentence: "I organized a big party but anybody came.",
-    errorWord: "anybody",
-    correctAnswer: ["nobody", "no one"]
-  },
-  {
-    sentence: "I have a carpet here with all the relevant documents.",
-    errorWord: "carpet",
-    correctAnswer: "folder"
-  },
-  {
-    sentence: "She’s responsible of training new employees.",
-    errorWord: "of",
+    sentence: "I have known them since seven years.",
+    errorWord: "since",
     correctAnswer: "for"
-  },
-  {
-    sentence: "At the moment, I’m unemployment, but I’m looking for a job.",
-    errorWord: "unemployment",
-    correctAnswer: "unemployed"
-  },
-  {
-    sentence: "My wife and I often discuss about stupid things.",
-    errorWord: "discuss",
-    correctAnswer: "argue"
-  },
-  {
-    sentence: "You can’t avoid me from seeing my friends.",
-    errorWord: "avoid",
-    correctAnswer: ["prevent", "stop"]
-  },
-  {
-    sentence: "I wish it doesn’t rain during your holiday!",
-    errorWord: "wish",
-    correctAnswer: "hope"
-  },
-  {
-    sentence: "Atleti won Real Madrid last night.",
-    errorWord: "won",
-    correctAnswer: "beat"
   }
 ];
 
