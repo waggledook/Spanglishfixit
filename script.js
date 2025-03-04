@@ -229,34 +229,40 @@ class SpanglishFixitGame {
     }
 
     updateSentence() {
-        const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
-        if (this.currentIndex < currentSet.length) {
-            const currentSentence = currentSet[this.currentIndex];
-            const sentenceParts = currentSentence.sentence.split(" ");
-            let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
-            document.getElementById("sentence").innerHTML = sentenceHTML;
-            // Initialize the click timer for scoring
-            this.startClickTime = Date.now();
-            // Clear any existing points interval (if any)
-            if (this.pointsInterval) clearInterval(this.pointsInterval);
-            // Start updating the points bar for the click phase
-            this.pointsInterval = setInterval(() => {
-                let elapsed = Date.now() - this.startClickTime;
-                let availablePoints = Math.max(100 - Math.floor(elapsed / 100), 10);
-                let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
-                document.getElementById("points-bar").style.width = percentage + "%";
-            }, 100);
-            // Attach event listeners for each word
-            const clickableWords = document.querySelectorAll(".clickable-word");
-            clickableWords.forEach((wordElement) => {
-                wordElement.addEventListener("click", () => {
-                    this.handleWordClick(wordElement, currentSentence);
-                });
+    const currentSet = this.reviewMode ? this.wrongAnswers : this.sentences;
+    if (this.currentIndex < currentSet.length) {
+        const currentSentence = currentSet[this.currentIndex];
+        const sentenceParts = currentSentence.sentence.split(" ");
+        let sentenceHTML = sentenceParts.map((word) => `<span class="clickable-word">${word}</span>`).join(" ");
+        document.getElementById("sentence").innerHTML = sentenceHTML;
+        // Re-enable clicking for the new sentence:
+        document.getElementById("sentence").style.pointerEvents = "auto";
+
+        // Initialize the click timer for scoring
+        this.startClickTime = Date.now();
+
+        // Clear any existing points interval (if any)
+        if (this.pointsInterval) clearInterval(this.pointsInterval);
+
+        // Start updating the points bar for the click phase
+        this.pointsInterval = setInterval(() => {
+            let elapsed = Date.now() - this.startClickTime;
+            let availablePoints = Math.max(100 - Math.floor(elapsed / 100), 10);
+            let percentage = ((availablePoints - 10) / (100 - 10)) * 100;
+            document.getElementById("points-bar").style.width = percentage + "%";
+        }, 100);
+
+        // Attach event listeners for each word
+        const clickableWords = document.querySelectorAll(".clickable-word");
+        clickableWords.forEach((wordElement) => {
+            wordElement.addEventListener("click", () => {
+                this.handleWordClick(wordElement, currentSentence);
             });
-        } else {
-            this.endGame();
-        }
+        });
+    } else {
+        this.endGame();
     }
+}
 
     handleWordClick(wordElement, currentSentence) {
         // Clear the points progress bar update interval for click phase
@@ -324,6 +330,10 @@ class SpanglishFixitGame {
                 this.handleWordClick(element, currentSentence);
             });
         });
+
+        // **Prevent any more clicks on this sentence**
+        document.getElementById("sentence").style.pointerEvents = "none";
+
         // Move to the correction phase
         this.selectErrorWord(clickedWord);
     }
@@ -767,6 +777,61 @@ const sentences = [
     sentence: "I have known them since seven years.",
     errorWord: "since",
     correctAnswer: "for"
+  },
+  {
+    sentence: "I don’t know how it is called.",
+    errorWord: "how",
+    correctAnswer: "what"
+  },
+  {
+    sentence: "I have a doubt about this.",
+    errorWord: "doubt",
+    correctAnswer: "question"
+  },
+  {
+    sentence: "I have a lot of homeworks.",
+    errorWord: "homeworks",
+    correctAnswer: "homework"
+  },
+  {
+    sentence: "She’s very good in maths.",
+    errorWord: "in",
+    correctAnswer: "at"
+  },
+  {
+    sentence: "They remembered me of my cousins.",
+    errorWord: "remembered",
+    correctAnswer: "remind"
+  },
+  {
+    sentence: "She’s married with an Ethiopian man.",
+    errorWord: "with",
+    correctAnswer: "to"
+  },
+  {
+    sentence: "I like going to a disco at the weekend.",
+    errorWord: "disco",
+    correctAnswer: "club"
+  },
+  {
+    sentence: "He’s so educated—He always treats everybody with a lot of respect.",
+    errorWord: "educated",
+    correctAnswer: "polite"
+  },
+  {
+    sentence: "He needs to go to university because he pretends to be a doctor.",
+    errorWord: "pretends",
+    correctAnswer: ["intends", "wants to", "hopes"]
+  },
+  {
+    sentence: "The noise from the neighbour’s house is molesting me.",
+    errorWord: "molesting",
+    correctAnswer: ["bothering", "annoying", "disturbing"]
+  },
+  {
+    sentence: "I liked the movie, but it was a little large for me.",
+    errorWord: "large",
+    correctAnswer: "long"
   }
 ];
 
