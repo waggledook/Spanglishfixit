@@ -832,6 +832,36 @@ const sentences = [
     sentence: "I liked the movie, but it was a little large for me.",
     errorWord: "large",
     correctAnswer: "long"
+  },
+  {
+    sentence: "He got a great punctuation in the game.",
+    errorWord: "punctuation",
+    correctAnswer: "score"
+  },
+  {
+    sentence: "Can you borrow me your pen?",
+    errorWord: "borrow",
+    correctAnswer: "lend"
+  },
+  {
+    sentence: "She works as a commercial in a bank.",
+    errorWord: "commercial",
+    correctAnswer: ["saleswoman", "salesperson"]
+  },
+  {
+    sentence: "They said me to wait here.",
+    errorWord: "said",
+    correctAnswer: "told"
+  },
+  {
+    sentence: "They all agreed that rock-climbing would be more funny.",
+    errorWord: "funny",
+    correctAnswer: "fun"
+  },
+  {
+    sentence: "Did you know that Jane is going to make a party on Friday?",
+    errorWord: "make",
+    correctAnswer: "have"
   }
 ];
 
