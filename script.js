@@ -801,7 +801,7 @@ const sentences = [
   {
     sentence: "They remembered me of my cousins.",
     errorWord: "remembered",
-    correctAnswer: "remind"
+    correctAnswer: "reminded"
   },
   {
     sentence: "She’s married with an Ethiopian man.",
@@ -821,7 +821,7 @@ const sentences = [
   {
     sentence: "He needs to go to university because he pretends to be a doctor.",
     errorWord: "pretends",
-    correctAnswer: ["intends", "wants to", "hopes"]
+    correctAnswer: ["intends", "wants", "hopes"]
   },
   {
     sentence: "The noise from the neighbour’s house is molesting me.",
