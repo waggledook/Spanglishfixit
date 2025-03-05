@@ -814,7 +814,7 @@ const sentences = [
     correctAnswer: "club"
   },
   {
-    sentence: "He’s so educated—He always treats everybody with a lot of respect.",
+    sentence: "He’s so educated. He always treats everybody with a lot of respect.",
     errorWord: "educated",
     correctAnswer: "polite"
   },
